@@ -26,6 +26,8 @@ namespace Ising {
         std::vector<int32_t> sites;
         Index2D size;
 
+        std::vector<std::vector<int32_t>> history;
+
         explicit Lattice(Index2D size, size_t seed, Parameters parameters) :
                 size(size), gen(seed), parameters(parameters),
                 x_random(0, size.x), y_random(0, size.y),
