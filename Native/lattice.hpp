@@ -10,7 +10,7 @@ namespace Ising {
         int32_t x = 0;
         int32_t y = 0;
 
-        Index2D(int32_t x, int32_t y) : x(x), y(y) {}
+        Index2D(signed int x, signed int y) : x(x), y(y) {}
     };
 
     struct Parameters {
@@ -23,16 +23,14 @@ namespace Ising {
 
     class Lattice {
     public:
-        std::vector<std::vector<int32_t>> sites;
+        std::vector<int32_t> sites;
         Index2D size;
 
         explicit Lattice(Index2D size, size_t seed, Parameters parameters) :
                 size(size), gen(seed), parameters(parameters),
                 x_random(0, size.x), y_random(0, size.y),
                 state_random(0, 1), real_random(0.0, 1.0) {
-            for (auto i = 0; i < size.y; i++) {
-                sites.emplace_back(size.x);
-            }
+            sites.resize(size.x * size.y);
         }
 
         double total_energy() {
@@ -70,7 +68,7 @@ namespace Ising {
             auto y = index.y;
 
             if ((x >= 0 && x < size.x) && (y >= 0 && y < size.y)) {
-                sites[y][x] = value;
+                sites[get_index(index)] = value;
             }
         }
 
@@ -79,10 +77,10 @@ namespace Ising {
             auto y = index.y;
 
             if ((x >= 0 && x < size.x) && (y >= 0 && y < size.y)) {
-                return sites[y][x];
+                return sites[get_index(index)];
             }
 
-            return int(0);
+            return 0;
         }
 
         void rand_init() {
@@ -91,18 +89,8 @@ namespace Ising {
             });
         }
 
-        std::vector<int32_t> flatten() {
-            std::vector<int32_t> output;
-
-            output.resize(size.x * size.y);
-
-            auto it = std::begin(output);
-
-            for (auto y = 0; y < size.y; ++y) {
-                it = std::copy(std::begin(sites[y]), std::end(sites[y]), it);
-            }
-
-            return output;
+        std::vector<int32_t> flatten() const {
+            return sites;
         }
 
     private:
@@ -112,6 +100,10 @@ namespace Ising {
         std::uniform_int_distribution<int32_t> y_random;
         std::uniform_int_distribution<int32_t> state_random;
         std::uniform_real_distribution<double> real_random;
+
+        size_t get_index(Index2D index) const {
+            return index.x + index.y * size.x;
+        }
 
         int32_t gen_state() {
             if(state_random(gen) == 1) {
