@@ -30,7 +30,9 @@ def test_1d_result():
             size = Index2D(L, 1)
 
 
-            lattice = Ising.Lattice(size, Parameters(-J, -B, beta))
+            lattice = Ising.Lattice(size)
+            lattice.parameters.set_uniform_binary(J, B)
+            lattice.parameters.beta = beta
 
             metropolis = Ising.Metropolis(lattice, 100)
 
@@ -96,7 +98,10 @@ def phase_transition():
 
         size = Index2D(xdim, ydim)
 
-        lattice = Ising.Lattice(size, Parameters(J, B, beta))
+        lattice = Ising.Lattice(size)
+        lattice.parameters.set_uniform_binary(J, B)
+        lattice.parameters.beta = beta
+
         metropolis = Ising.Metropolis(lattice, 100)
         ensemble = Ising.Ensemble(metropolis, lattice)
 
@@ -153,13 +158,18 @@ def phase_transition():
 
 def quench():
     beta = 1.0
-    J = -10.0
+    J = -20.0
     B = 0.0
 
     dim = 500
     size = Index2D(dim, dim)
 
-    lattice = Ising.Lattice(size, Parameters(J, B, beta))
+
+
+    lattice = Ising.Lattice(size)
+    lattice.parameters.set_uniform_binary(J, B)
+    lattice.parameters.beta = beta
+
     metropolis = Ising.Metropolis(lattice, 123)
     metropolis.rand_init()
 
@@ -186,7 +196,11 @@ def EQ():
     dim = 128
     size = Index2D(dim, dim)
 
-    lattice = Ising.Lattice(size, Parameters(J, B, beta))
+    lattice = Ising.Lattice(size)
+    lattice.parameters.set_uniform_binary(J, B)
+    lattice.parameters.beta = beta
+
+
     metropolis = Ising.Metropolis(lattice, 123)
     metropolis.rand_init()
 
@@ -208,4 +222,4 @@ def EQ():
 
 if __name__ == '__main__':
     set_style()
-    EQ()
+    quench()

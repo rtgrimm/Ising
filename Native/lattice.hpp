@@ -3,6 +3,8 @@
 #include <vector>
 #include <cstdint>
 #include <random>
+#include <map>
+#include <tuple>
 
 namespace Ising {
 
@@ -16,12 +18,38 @@ namespace Ising {
         Index2D& operator= (const Index2D&) = default;
     };
 
-    struct Parameters {
-        double J;
-        double B;
-        double beta;
+    class Parameters {
+    public:
+        double beta = 1.0;
 
-        Parameters(double j, double b, double beta) : J(j), B(b), beta(beta) {}
+        void set_uniform_binary(double J, double B) {
+            set_J(0, 1, -J);
+            set_J(0, 0, J);
+            set_B(0, -B);
+            set_B(1, B);
+        }
+
+        void set_J(signed int i, signed int j, double J) {
+            J_map[std::make_tuple(i, j)] = J;
+            J_map[std::make_tuple(j, i)] = J;
+        }
+
+        double get_J(signed int i, signed int j)  {
+            return J_map[std::make_tuple(i, j)];
+        }
+        
+        double get_B(signed int i) {
+            return B_map[i];
+        }
+        
+        void set_B(signed int i, double B) {
+            B_map[i] = B;
+        }
+        
+
+    private:
+        std::map<std::tuple<int32_t, int32_t>, double> J_map;
+        std::map<int32_t, double> B_map;
     };
 
 
@@ -35,8 +63,7 @@ namespace Ising {
             return sites;
         }
 
-        explicit Lattice(Index2D size, Parameters parameters) :
-                size(size), parameters(parameters)
+        explicit Lattice(Index2D size) : size(size)
         {
             sites.resize(size.x * size.y);
         }
@@ -101,10 +128,14 @@ namespace Ising {
 
         double energy(Index2D center, int32_t state) {
             auto interaction = [&] (auto dx, auto dy) {
-                return double(read(Index2D{center.x + dx, center.y + dy}) * state) * parameters.J;
+                Index2D other_loc {center.x + dx, center.y + dy};
+                auto other = read(other_loc);
+
+                auto J = parameters.get_J(state, other);
+                return J;
             };
 
-            auto energy = parameters.B * double(state);
+            auto energy = parameters.get_B(state);
 
             energy += interaction(0, 1);
             energy += interaction(0, -1);
@@ -135,9 +166,9 @@ namespace Ising {
 
     class Metropolis {
     public:
-        Metropolis(Lattice* lattice_, size_t seed) :
+        Metropolis(Lattice* lattice_, size_t seed, int state_count = 2) :
                         x_random(0, lattice_->size.x), y_random(0, lattice_->size.y),
-                       state_random(0, 1), real_random(0.0, 1.0), lattice(lattice_), gen(seed) {}
+                       state_random(0, state_count - 1), real_random(0.0, 1.0), lattice(lattice_), gen(seed) {}
 
         void rand_init() {
             lattice->for_all([&] (Index2D center) {
@@ -183,11 +214,7 @@ namespace Ising {
         std::uniform_real_distribution<double> real_random;
 
         int32_t gen_state() {
-            if(state_random(gen) == 1) {
-                return 1;
-            } else {
-                return -1;
-            }
+            return state_random(gen);
         }
     };
 
