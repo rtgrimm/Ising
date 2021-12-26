@@ -2,6 +2,7 @@ import Ising
 import matplotlib.pyplot as plt
 from Ising import Index2D, Parameters
 from Python.Ising import Ensemble
+from Python.style import set_style, pal
 from Python.wrap import VecToMat
 import  numpy as np
 
@@ -35,11 +36,7 @@ def test_1d_result():
 
             metropolis.rand_init()
 
-
-
             metropolis.step(100000)
-
-
 
             steps = 10000
 
@@ -80,12 +77,15 @@ def display_lattice(dim, lattice):
     plt.pause(1e-6)
 
 
-def main():
+def phase_transition():
     heat_cap_list = []
     T_list = []
     magnetization_list = []
+    mag_sus_list = []
 
-    for T in np.linspace(0.1, 5.0, 200):
+    k_b = 1
+
+    for T in np.linspace(0.1, 5.0, 1000):
         beta = 1/T
         print(T)
         J = -1.0
@@ -109,24 +109,103 @@ def main():
 
         ensemble.sample(1000000, 10)
 
-        magnetization = ensemble.magnetization()
+        magnetization = ensemble.magnetization_mean()
 
-        heat_cap = (1/T**2)*(ensemble.energy_variance() - ensemble.energy_mean()**2)
+        mag_sus = (1/(k_b * T)) * (ensemble.magnetization_variance() - np.power(ensemble.magnetization_mean(), 2))
+
+
+        heat_cap = (1/(k_b * T**2))*(ensemble.energy_variance() - np.power(ensemble.energy_mean(), 2))
+
         heat_cap_list.append(heat_cap)
         magnetization_list.append(magnetization)
+        mag_sus_list.append(mag_sus)
         T_list.append(T)
 
     plt.ioff()
 
-    plt.figure()
-    plt.scatter(T_list, heat_cap_list)
+    colors = pal("muted", 3)
 
-    plt.figure()
-    plt.scatter(T_list, np.abs(magnetization_list))
+    plt.figure(figsize=(12, 12))
+
+    plt.xlabel("$T$")
+    plt.ylabel("$C_v$")
+    plt.scatter(T_list, heat_cap_list, c=next(colors))
+    plt.tight_layout()
+    plt.savefig("heat_cap.pdf")
+
+    plt.figure(figsize=(12, 12))
+    plt.xlabel("$T$")
+    plt.ylabel("$\\langle M \\rangle$")
+    plt.scatter(T_list, np.abs(magnetization_list), c=next(colors))
+    plt.tight_layout()
+    plt.savefig("mag.pdf")
+
+    plt.figure(figsize=(12, 12))
+    plt.xlabel("$T$")
+    plt.ylabel("$\chi_{mag}$")
+    plt.scatter(T_list, mag_sus_list, c=next(colors))
+    plt.tight_layout()
+    plt.savefig("mag_sus.pdf")
+
 
     plt.show()
 
 
+def quench():
+    beta = 1.0
+    J = -10.0
+    B = 0.0
+
+    dim = 500
+    size = Index2D(dim, dim)
+
+    lattice = Ising.Lattice(size, Parameters(J, B, beta))
+    metropolis = Ising.Metropolis(lattice, 123)
+    metropolis.rand_init()
+
+    metropolis.step(2000000)
+
+
+
+    plt.figure(figsize=(16, 16))
+    output = VecToMat(lattice.data())
+    grid = output.reshape((dim, dim))
+
+    plt.xlabel("Site $X$")
+    plt.ylabel("Site $Y$")
+    plt.imshow(grid)
+    plt.tight_layout()
+    plt.savefig("grid.pdf")
+    plt.show()
+
+def EQ():
+    beta = 1.0
+    J = -10.0
+    B = 0.0
+
+    dim = 128
+    size = Index2D(dim, dim)
+
+    lattice = Ising.Lattice(size, Parameters(J, B, beta))
+    metropolis = Ising.Metropolis(lattice, 123)
+    metropolis.rand_init()
+
+    energy_list = []
+    steps = range(0, 10000)
+
+    for i in steps:
+        print(i / np.max(steps) * 100)
+        energy_list.append(lattice.total_energy() / (dim * dim))
+        metropolis.step(10000)
+
+    plt.figure(figsize=(16, 16))
+    plt.xlabel("Iteration")
+    plt.ylabel("Energy per Site")
+    plt.plot(np.array(steps) * 10000, energy_list)
+    plt.tight_layout()
+    plt.savefig("eq.pdf")
+    plt.show()
 
 if __name__ == '__main__':
-    main()
+    set_style()
+    EQ()

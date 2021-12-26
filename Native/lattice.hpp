@@ -231,9 +231,15 @@ namespace Ising {
             return Z;
         }
 
-        double magnetization() {
+        double magnetization_mean() {
             return expectation_value([&] (Lattice& config) {
                 return config.magnetization();
+            });
+        }
+
+        double magnetization_variance() {
+            return expectation_value([&] (Lattice& config) {
+                return std::pow(config.magnetization(), 2.0);
             });
         }
 
