@@ -22,10 +22,26 @@ namespace Ising {
     public:
         double beta = 1.0;
 
+        size_t state_count() {
+            return states.size();
+        }
+
+        void add_state(signed int state) {
+            states.push_back(state);
+        }
+
+        signed int get_state(size_t index) {
+            return states[index];
+        }
+
         void set_uniform_binary(double J, double B) {
-            set_J(0, 1, -J);
-            set_J(0, 0, J);
-            set_B(0, -B);
+            add_state(1);
+            add_state(-1);
+
+            set_J(-1, 1, -J);
+            set_J(-1, -1, J);
+            set_J(1, 1, J);
+            set_B(-1, -B);
             set_B(1, B);
         }
 
@@ -48,6 +64,7 @@ namespace Ising {
         
 
     private:
+        std::vector<int32_t> states;
         std::map<std::tuple<int32_t, int32_t>, double> J_map;
         std::map<int32_t, double> B_map;
     };
@@ -57,6 +74,7 @@ namespace Ising {
     public:
         Index2D size;
         Parameters parameters;
+
 
 
         std::vector<int32_t> data() {
@@ -166,9 +184,9 @@ namespace Ising {
 
     class Metropolis {
     public:
-        Metropolis(Lattice* lattice_, size_t seed, int state_count = 2) :
+        Metropolis(Lattice* lattice_, size_t seed) :
                         x_random(0, lattice_->size.x), y_random(0, lattice_->size.y),
-                       state_random(0, state_count - 1), real_random(0.0, 1.0), lattice(lattice_), gen(seed) {}
+                        real_random(0.0, 1.0), lattice(lattice_), gen(seed) {}
 
         void rand_init() {
             lattice->for_all([&] (Index2D center) {
@@ -210,11 +228,14 @@ namespace Ising {
         std::mt19937 gen;
         std::uniform_int_distribution<int32_t> x_random;
         std::uniform_int_distribution<int32_t> y_random;
-        std::uniform_int_distribution<int32_t> state_random;
+
         std::uniform_real_distribution<double> real_random;
 
         int32_t gen_state() {
-            return state_random(gen);
+            std::uniform_int_distribution<int32_t> state_random (
+                    0, static_cast<int32_t>(lattice->parameters.state_count()) - 1);
+
+            return lattice->parameters.get_state(state_random(gen));
         }
     };
 

@@ -87,7 +87,7 @@ def phase_transition():
 
     k_b = 1
 
-    for T in np.linspace(0.1, 5.0, 1000):
+    for T in np.linspace(0.1, 5.0, 2000):
         beta = 1/T
         print(T)
         J = -1.0
@@ -158,12 +158,11 @@ def phase_transition():
 
 def quench():
     beta = 1.0
-    J = -20.0
+    J = -10.0
     B = 0.0
 
     dim = 500
     size = Index2D(dim, dim)
-
 
 
     lattice = Ising.Lattice(size)
@@ -187,6 +186,45 @@ def quench():
     plt.tight_layout()
     plt.savefig("grid.pdf")
     plt.show()
+
+def ABV_quench():
+    beta = 1.0
+    J = -10.0
+    B = 0.0
+
+    dim = 500
+    size = Index2D(dim, dim)
+
+
+    lattice = Ising.Lattice(size)
+    lattice.parameters.set_uniform_binary(J, B)
+
+    lattice.parameters.add_state(0)
+    lattice.parameters.set_J(0, 0, 0.0)
+    lattice.parameters.set_J(1, 0, 0.0)
+    lattice.parameters.set_J(-1, 0, 0.0)
+    lattice.parameters.set_B(0, 0.0)
+
+    lattice.parameters.beta = beta
+
+    metropolis = Ising.Metropolis(lattice, 123)
+    metropolis.rand_init()
+
+    metropolis.step(2000000)
+
+
+
+    plt.figure(figsize=(16, 16))
+    output = VecToMat(lattice.data())
+    grid = output.reshape((dim, dim))
+
+    plt.xlabel("Site $X$")
+    plt.ylabel("Site $Y$")
+    plt.imshow(grid)
+    plt.tight_layout()
+    plt.savefig("grid.pdf")
+    plt.show()
+
 
 def EQ():
     beta = 1.0
@@ -222,4 +260,4 @@ def EQ():
 
 if __name__ == '__main__':
     set_style()
-    quench()
+    phase_transition()
